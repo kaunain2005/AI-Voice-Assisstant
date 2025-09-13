@@ -5,13 +5,17 @@ import platform
 import google.generativeai as genai
 import sys
 import subprocess
+from dotenv import load_dotenv
 
 # --- Configuration ---
-# You need to set your Gemini API key here or as an environment variable.
+# Load environment variables from the .env file
+load_dotenv()
+
+# Get the API key from the environment variable
 # To get a key, visit https://ai.google.dev/
-API_KEY = "YOUR_API_KEY"
-if not API_KEY or API_KEY == "YOUR_API_KEY":
-    print("Please set your Gemini API key in the script or as an environment variable.")
+API_KEY = os.getenv("GOOGLE_API_KEY")
+if not API_KEY:
+    print("Please set your GOOGLE_API_KEY in the .env file.")
     sys.exit()
 
 genai.configure(api_key=API_KEY)
@@ -22,7 +26,9 @@ engine = pyttsx3.init()
 # Get available voices and set a female voice if available
 voices = engine.getProperty('voices')
 for voice in voices:
-    if voice.gender == 'female':
+    # This check might need adjustment based on the OS and installed voices
+    # 'voice.name' or other properties might be more reliable
+    if 'female' in voice.name.lower() or 'zira' in voice.name.lower():
         engine.setProperty('voice', voice.id)
         break
 
@@ -33,8 +39,11 @@ r = sr.Recognizer()
 def speak(text):
     """Converts text to speech."""
     print(f"Assistant: {text}")
-    engine.say(text)
-    engine.runAndWait()
+    try:
+        engine.say(text)
+        engine.runAndWait()
+    except Exception as e:
+        print(f"Error with text-to-speech engine: {e}")
 
 def listen():
     """Listens for user input and converts speech to text."""
@@ -61,24 +70,23 @@ def execute_command(command):
     """
     if "open youtube" in command:
         speak("Opening YouTube.")
-        # Command varies by OS
-        if platform.system() == "Windows":
-            subprocess.Popen(["start", "https://www.youtube.com"], shell=True)
-        elif platform.system() == "Darwin":  # macOS
-            subprocess.Popen(["open", "https://www.youtube.com"])
-        else:  # Linux
-            subprocess.Popen(["xdg-open", "https://www.youtube.com"])
+        subprocess.Popen(["start", "https://www.youtube.com"] if platform.system() == "Windows" else ["open", "https://www.youtube.com"] if platform.system() == "Darwin" else ["xdg-open", "https://www.youtube.com"])
         return True
-    elif "open chrome" in command:
+    elif "open chrome" in command or "open browser" in command:
         speak("Opening Google Chrome.")
-        # Command varies by OS
-        if platform.system() == "Windows":
-            subprocess.Popen(["start", "chrome"])
-        elif platform.system() == "Darwin":  # macOS
-            subprocess.Popen(["open", "-a", "Google Chrome"])
-        else:  # Linux
-            # 'google-chrome' or 'google-chrome-stable' might be the command
-            subprocess.Popen(["google-chrome"])
+        subprocess.Popen(["start", "chrome"] if platform.system() == "Windows" else ["open", "-a", "Google Chrome"] if platform.system() == "Darwin" else ["google-chrome"])
+        return True
+    elif "open google" in command:
+        speak("Opening Google.")
+        subprocess.Popen(["start", "https://www.google.com"] if platform.system() == "Windows" else ["open", "https://www.google.com"] if platform.system() == "Darwin" else ["xdg-open", "https://www.google.com"])
+        return True
+    elif "open gmail" in command:
+        speak("Opening Gmail.")
+        subprocess.Popen(["start", "https://mail.google.com"] if platform.system() == "Windows" else ["open", "https://mail.google.com"] if platform.system() == "Darwin" else ["xdg-open", "https://mail.google.com"])
+        return True
+    elif "open spotify" in command:
+        speak("Opening Spotify.")
+        subprocess.Popen(["start", "spotify"] if platform.system() == "Windows" else ["open", "-a", "Spotify"] if platform.system() == "Darwin" else ["spotify"])
         return True
     return False
 
@@ -86,7 +94,9 @@ def get_gemini_response(prompt):
     """Sends a prompt to the Gemini API and returns the response."""
     try:
         model = genai.GenerativeModel('gemini-1.5-flash')
-        response = model.generate_content(prompt)
+        # Refined the prompt to provide more context for the AI model
+        full_prompt = f"You are a helpful voice assistant. Answer the user's question concisely and accurately: {prompt}"
+        response = model.generate_content(full_prompt)
         return response.text
     except Exception as e:
         return f"An error occurred while communicating with the Gemini API: {e}"
@@ -105,9 +115,12 @@ def main():
                 speak("Goodbye!")
                 break
             
-            # Send the command to the AI model
+            # If the command is not a system command, send it to the AI model
             response = get_gemini_response(command)
             speak(response)
+        else:
+            # If nothing was understood, let the user know and continue the loop
+            speak("I'm sorry, I didn't catch that. Can you please repeat?")
 
 if __name__ == "__main__":
     main()

@@ -17,7 +17,7 @@ if not API_KEY:
 genai.configure(api_key=API_KEY)
 
 engine = pyttsx3.init()
-# Get available voices and set a female voice if available
+
 voices = engine.getProperty('voices')
 for voice in voices:
     # This check might need adjustment based on the OS and installed voices

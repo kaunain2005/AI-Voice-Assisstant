@@ -9,8 +9,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Get the API key from the environment variable
-# To get a key, visit https://ai.google.dev/
 API_KEY = os.getenv("GOOGLE_API_KEY")
 if not API_KEY:
     print("Please set your GOOGLE_API_KEY in the .env file.")

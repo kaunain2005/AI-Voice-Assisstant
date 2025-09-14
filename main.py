@@ -7,8 +7,6 @@ import sys
 import subprocess
 from dotenv import load_dotenv
 
-# --- Configuration ---
-# Load environment variables from the .env file
 load_dotenv()
 
 # Get the API key from the environment variable

@@ -104,10 +104,29 @@ def get_gemini_response(prompt):
 # --- Main Loop ---
 def main():
     speak("Hello, I am your voice assistant. How can I help you today?")
+    assistant_name = "AI Voice Assistant"
+    is_updating_name = False
+    
     while True:
         command = listen()
         
         if command:
+            if is_updating_name:
+                if command:
+                    assistant_name = command.title()
+                    speak(f"Okay, I will now be called {assistant_name}.")
+                    is_updating_name = False
+                continue
+
+            if "what is your name" in command or "what's your name" in command or "who are you" in command:
+                speak(f"My name is {assistant_name}.")
+                continue
+            
+            if "update your name" in command:
+                speak("What would you like to call me?")
+                is_updating_name = True
+                continue
+                
             if execute_command(command):
                 continue
             

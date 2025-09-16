@@ -7,8 +7,12 @@ import sys
 import subprocess
 from dotenv import load_dotenv
 
+# --- Configuration ---
+# Load environment variables from the .env file
 load_dotenv()
 
+# Get the API key from the environment variable
+# To get a key, visit https://ai.google.dev/
 API_KEY = os.getenv("GOOGLE_API_KEY")
 if not API_KEY:
     print("Please set your GOOGLE_API_KEY in the .env file.")
@@ -16,15 +20,19 @@ if not API_KEY:
 
 genai.configure(api_key=API_KEY)
 
+# --- Initialize Engines ---
+# Initialize the text-to-speech engine
 engine = pyttsx3.init()
-
+# Get available voices and set a female voice if available
 voices = engine.getProperty('voices')
-for voice in voices:
-    # This check might need adjustment based on the OS and installed voices
-    # 'voice.name' or other properties might be more reliable
-    if 'female' in voice.name.lower() or 'zira' in voice.name.lower():
-        engine.setProperty('voice', voice.id)
-        break
+try:
+    for voice in voices:
+        if 'female' in voice.name.lower() or 'zira' in voice.name.lower():
+            engine.setProperty('voice', voice.id)
+            print("Female voice set successfully.")
+            break
+except Exception as e:
+    print(f"Failed to set a specific voice: {e}")
 
 # Initialize the speech recognition recognizer
 r = sr.Recognizer()
@@ -37,6 +45,7 @@ def speak(text):
         engine.say(text)
         engine.runAndWait()
     except Exception as e:
+        # This will catch errors if the text-to-speech engine fails to run
         print(f"Error with text-to-speech engine: {e}")
 
 def listen():
@@ -64,23 +73,38 @@ def execute_command(command):
     """
     if "open youtube" in command:
         speak("Opening YouTube.")
-        subprocess.Popen(["start", "https://www.youtube.com"] if platform.system() == "Windows" else ["open", "https://www.youtube.com"] if platform.system() == "Darwin" else ["xdg-open", "https://www.youtube.com"])
+        try:
+            subprocess.Popen(["start", "https://www.youtube.com"] if platform.system() == "Windows" else ["open", "https://www.youtube.com"] if platform.system() == "Darwin" else ["xdg-open", "https://www.youtube.com"])
+        except FileNotFoundError:
+            speak("I was unable to find the command to open YouTube. Please ensure you have a web browser installed.")
         return True
     elif "open chrome" in command or "open browser" in command:
         speak("Opening Google Chrome.")
-        subprocess.Popen(["start", "chrome"] if platform.system() == "Windows" else ["open", "-a", "Google Chrome"] if platform.system() == "Darwin" else ["google-chrome"])
+        try:
+            subprocess.Popen(["start", "chrome"] if platform.system() == "Windows" else ["open", "-a", "Google Chrome"] if platform.system() == "Darwin" else ["google-chrome"])
+        except FileNotFoundError:
+            speak("I was unable to find Google Chrome. Please ensure it's installed and in your system's PATH.")
         return True
     elif "open google" in command:
         speak("Opening Google.")
-        subprocess.Popen(["start", "https://www.google.com"] if platform.system() == "Windows" else ["open", "https://www.google.com"] if platform.system() == "Darwin" else ["xdg-open", "https://www.google.com"])
+        try:
+            subprocess.Popen(["start", "https://www.google.com"] if platform.system() == "Windows" else ["open", "https://www.google.com"] if platform.system() == "Darwin" else ["xdg-open", "https://www.google.com"])
+        except FileNotFoundError:
+            speak("I was unable to find a command to open a web browser. Please ensure you have one installed.")
         return True
     elif "open gmail" in command:
         speak("Opening Gmail.")
-        subprocess.Popen(["start", "https://mail.google.com"] if platform.system() == "Windows" else ["open", "https://mail.google.com"] if platform.system() == "Darwin" else ["xdg-open", "https://mail.google.com"])
+        try:
+            subprocess.Popen(["start", "https://mail.google.com"] if platform.system() == "Windows" else ["open", "https://mail.google.com"] if platform.system() == "Darwin" else ["xdg-open", "https://mail.google.com"])
+        except FileNotFoundError:
+            speak("I was unable to find a command to open Gmail. Please ensure you have a web browser installed.")
         return True
     elif "open spotify" in command:
         speak("Opening Spotify.")
-        subprocess.Popen(["start", "spotify"] if platform.system() == "Windows" else ["open", "-a", "Spotify"] if platform.system() == "Darwin" else ["spotify"])
+        try:
+            subprocess.Popen(["start", "spotify"] if platform.system() == "Windows" else ["open", "-a", "Spotify"] if platform.system() == "Darwin" else ["spotify"])
+        except FileNotFoundError:
+            speak("I was unable to find Spotify. Please ensure it's installed and in your system's PATH.")
         return True
     return False
 
@@ -88,7 +112,6 @@ def get_gemini_response(prompt):
     """Sends a prompt to the Gemini API and returns the response."""
     try:
         model = genai.GenerativeModel('gemini-1.5-flash')
-        # Refined the prompt to provide more context for the AI model
         full_prompt = f"You are a helpful voice assistant. Answer the user's question concisely and accurately: {prompt}"
         response = model.generate_content(full_prompt)
         return response.text
@@ -113,7 +136,7 @@ def main():
                 continue
 
             if "what is your name" in command or "what's your name" in command or "who are you" in command:
-                speak(f"My name is {assistant_name}.")
+                speak("My name is " + assistant_name)
                 continue
             
             if "update your name" in command:

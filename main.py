@@ -7,12 +7,8 @@ import sys
 import subprocess
 from dotenv import load_dotenv
 
-# --- Configuration ---
-# Load environment variables from the .env file
 load_dotenv()
 
-# Get the API key from the environment variable
-# To get a key, visit https://ai.google.dev/
 API_KEY = os.getenv("GOOGLE_API_KEY")
 if not API_KEY:
     print("Please set your GOOGLE_API_KEY in the .env file.")
@@ -20,10 +16,8 @@ if not API_KEY:
 
 genai.configure(api_key=API_KEY)
 
-# --- Initialize Engines ---
-# Initialize the text-to-speech engine
 engine = pyttsx3.init()
-# Get available voices and set a female voice if available
+
 voices = engine.getProperty('voices')
 for voice in voices:
     # This check might need adjustment based on the OS and installed voices
